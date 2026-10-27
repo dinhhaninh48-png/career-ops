@@ -36,6 +36,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { LIVENESS_CONTEXT_OPTIONS, rejectPrivateOrInvalid } from './liveness-browser.mjs';
+import { isSlbListing, readSlbCoveoResults } from './slb-coveo-adapter.mjs';
 
 const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
 
@@ -234,7 +235,9 @@ async function main() {
     const raw = await readDom(page);
 
     const result = mode === 'listing'
-      ? normalizeListing(raw.anchors, finalUrl, max)
+      ? { url: finalUrl, jobs: isSlbListing(finalUrl)
+          ? (await readSlbCoveoResults(page, max))
+          : normalizeListing(raw.anchors, finalUrl, max).jobs }
       : normalizeJd(raw, finalUrl, maxChars);
     process.stdout.write(JSON.stringify(result));
   } catch (err) {
